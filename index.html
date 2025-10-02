@@ -2,22 +2,35 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Test NARS</title>
+    <title>Juego Memorice</title>
     <style>
       body {
         font-family: Arial, sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         height: 100vh;
         margin: 0;
         background: #111;
         overflow: hidden;
       }
-      h1 {
-        color: #fff;
+      header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 10px;
       }
+      header img {
+        width: 150px;
+        height: auto;
+      }
+      .frente {
+        background: url("portada.png") center/cover no-repeat;
+        border: 1px solid #ffd700; /* borde dorado llamativo */
+        box-shadow: 0 0 2px rgba(255, 215, 0, 0.6);
+      }
+
       .juego {
         display: grid;
         grid-template-columns: repeat(4, 120px);
@@ -25,42 +38,48 @@
       }
       .carta {
         width: 120px;
-        height: 150px;
+        height: 160px;
         perspective: 1000px;
         cursor: pointer;
         position: relative;
         z-index: 1;
       }
-      .carta-interior {
+      .carta-interna {
         position: relative;
         width: 100%;
         height: 100%;
         transition: transform 0.6s;
         transform-style: preserve-3d;
       }
-      .carta.volteada .carta-interior {
+      .carta.volteada .carta-interna {
         transform: rotateY(180deg);
       }
       .carta.volteada {
         z-index: 10;
       }
-      .cara-frontal,
-      .cara-trasera {
+
+      .frente,
+      .atras {
         position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         border-radius: 10px;
         backface-visibility: hidden;
       }
-      .cara-frontal {
-        background: #444;
+      .frente {
+        background: url("carta.png") center/cover no-repeat;
+        border: 2px solid #333;
+        opacity: 0.4; /* 👈 hace la portada más translúcida */
       }
-      .cara-trasera {
+      .atras {
         transform: rotateY(180deg);
         background-size: cover;
         background-position: center;
         border: 2px solid #333;
       }
+
       .vibrar {
         animation: vibrar 0.4s linear 2;
       }
@@ -81,11 +100,42 @@
           transform: translateX(0);
         }
       }
+
+      .frente {
+        position: relative;
+        background: #000 url("imagenes/portada.jpg") center/70% no-repeat;
+        border: 1px solid #fff;
+      }
+      .frente::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.1); /* efecto translúcido */
+        border-radius: 10px;
+      }
+
+      .giro-final {
+        animation: giroFinal 2s ease forwards;
+      }
+      @keyframes giroFinal {
+        0% {
+          transform: scale(1) rotateY(0deg);
+        }
+        50% {
+          transform: scale(1.2) rotateY(720deg);
+        }
+        100% {
+          transform: scale(1) rotateY(1440deg);
+        }
+      }
+
       .estrella {
         position: fixed;
         width: 10px;
         height: 10px;
-        background: gold;
         border-radius: 50%;
         pointer-events: none;
         animation: explotar 1s ease-out forwards;
@@ -96,6 +146,7 @@
           opacity: 0;
         }
       }
+
       .imagen-centro {
         position: fixed;
         top: 50%;
@@ -104,6 +155,7 @@
         opacity: 0;
         transition: all 0.6s ease;
         z-index: 1000;
+        pointer-events: none;
       }
       .imagen-centro.mostrar {
         opacity: 1;
@@ -112,37 +164,60 @@
     </style>
   </head>
   <body>
-    <h1>Test interactivo y funcional</h1>
+    <header>
+      <img src="imagenes/917796.png" alt="Logo del juego" />
+    </header>
     <div class="juego" id="juego"></div>
-    <img id="imagenCentro" class="imagen-centro" />
+    <div id="imagenCentro" class="imagen-centro"></div>
 
     <script>
+      //imagenes marca
       const imagenes = [
-        "imagenes_prueba/foto_1.jpg",
-        "imagenes_prueba/foto_2.jpeg",
-        "imagenes_prueba/foto_3.jpeg",
-        "imagenes_prueba/foto_4.jpeg",
-        "imagenes_prueba/foto_5.jpeg",
-        "imagenes_prueba/foto_6.jpeg",
+        "imagenes/foto1.jpg",
+        "imagenes/foto2.jpg",
+        "imagenes/foto3.jpg",
+        "imagenes/foto4.jpg",
+        "imagenes/foto5.jpg",
+        "imagenes/foto6.jpg",
       ];
 
-      let cartas = [...imagenes, ...imagenes];
-      cartas.sort(() => Math.random() - 0.5);
+      // Colores de la paleta
+      const coloresPaleta = [
+        "#EAD9C5",
+        "#C8A060",
+        "#E8B6A7",
+        "#8B5C42",
+        "#7A2F3C",
+        "#4C2C22",
+      ];
 
-      const contenedorJuego = document.getElementById("juego");
+      let cartas;
+      let contenedorJuego = document.getElementById("juego");
       const imagenCentro = document.getElementById("imagenCentro");
+
       let cartasVolteadas = [];
-      let cantidadAdivinadas = 0;
+      let aciertos = 0;
+
+      function iniciarJuego() {
+        contenedorJuego.innerHTML = "";
+        cartas = [...imagenes, ...imagenes]; // 12 cartas (6 pares)
+        cartas.sort(() => Math.random() - 0.5);
+        aciertos = 0;
+        cartasVolteadas = [];
+        cartas.forEach((imagen) =>
+          contenedorJuego.appendChild(crearCarta(imagen))
+        );
+      }
 
       function crearCarta(imagen) {
         const carta = document.createElement("div");
         carta.classList.add("carta");
         carta.innerHTML = `
-        <div class="carta-interior">
-          <div class="cara-frontal"></div>
-          <div class="cara-trasera" style="background-image: url('${imagen}')"></div>
-        </div>
-      `;
+          <div class="carta-interna">
+            <div class="frente"></div>
+            <div class="atras" style="background-image: url('${imagen}')"></div>
+          </div>
+        `;
         carta.addEventListener("click", () => voltearCarta(carta, imagen));
         return carta;
       }
@@ -167,11 +242,17 @@
             cartasVolteadas.forEach((obj) => obj.carta.classList.add("vibrar"));
             mostrarImagenCentro(imagen);
             explotarEstrellas();
-            cantidadAdivinadas += 2;
+            aciertos += 2;
             cartasVolteadas = [];
 
-            if (cantidadAdivinadas === cartas.length - 2) {
-              setTimeout(voltearUltimasDos, 1000);
+            if (aciertos === cartas.length - 2) {
+              setTimeout(() => {
+                voltearUltimasCartas();
+                setTimeout(() => {
+                  animacionFinal();
+                  setTimeout(iniciarJuego, 5000);
+                }, 1000);
+              }, 500);
             }
           } else {
             setTimeout(() => {
@@ -190,6 +271,8 @@
           estrella.classList.add("estrella");
           estrella.style.left = "50%";
           estrella.style.top = "50%";
+          estrella.style.background =
+            coloresPaleta[Math.floor(Math.random() * coloresPaleta.length)];
           estrella.style.setProperty("--x", `${(Math.random() - 0.5) * 800}px`);
           estrella.style.setProperty("--y", `${(Math.random() - 0.5) * 800}px`);
           document.body.appendChild(estrella);
@@ -198,18 +281,19 @@
       }
 
       function mostrarImagenCentro(imagen) {
-        imagenCentro.src = imagen;
+        imagenCentro.innerHTML = `<img src="${imagen}" style="max-width:200px; border-radius:10px;">`;
         imagenCentro.classList.add("mostrar");
         setTimeout(() => imagenCentro.classList.remove("mostrar"), 1500);
       }
 
-      function voltearUltimasDos() {
+      function voltearUltimasCartas() {
         const restantes = [
           ...document.querySelectorAll(".carta:not(.volteada)"),
         ];
         restantes.forEach((carta) => {
           carta.style.zIndex = 10;
           carta.classList.add("volteada");
+          carta.classList.add("vibrar");
           setTimeout(() => {
             carta.style.zIndex = "";
           }, 600);
@@ -217,7 +301,20 @@
         explotarEstrellas();
       }
 
-      cartas.forEach((img) => contenedorJuego.appendChild(crearCarta(img)));
+      function animacionFinal() {
+        const todas = document.querySelectorAll(".carta");
+        todas.forEach((carta) => {
+          carta.classList.add("vibrar");
+          carta.classList.add("giro-final");
+          setTimeout(() => {
+            carta.classList.remove("giro-final");
+            carta.classList.remove("vibrar");
+          }, 2000);
+        });
+        explotarEstrellas();
+      }
+
+      iniciarJuego();
     </script>
   </body>
 </html>
