@@ -9,35 +9,32 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center; /* centrado vertical */
+        justify-content: center;
         height: 100vh;
         margin: 0;
-        background: #000000;
+        background: #000;
         overflow: hidden;
       }
       header {
-        display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 30px; /* separa logo de las cartas */
+        margin-bottom: 40px;
       }
       header img {
         width: 200px;
         height: auto;
       }
 
-      /* centrado vertical para 55\" */
       .juego {
         display: grid;
-        grid-template-columns: repeat(3, 180px);
-        gap: 30px;
-        justify-content: center;
-        align-items: center;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 80vw;
+        max-width: 600px;
       }
 
       .carta {
-        width: 180px;
-        height: 240px;
+        aspect-ratio: 3/4;
         perspective: 1000px;
         cursor: pointer;
         position: relative;
@@ -53,9 +50,6 @@
       .carta.volteada .carta-interna {
         transform: rotateY(180deg);
       }
-      .carta.volteada {
-        z-index: 10;
-      }
 
       .frente,
       .atras {
@@ -64,16 +58,19 @@
         left: 0;
         width: 100%;
         height: 100%;
-        border-radius: 12px;
+        border-radius: 1px;
         backface-visibility: hidden;
+        pointer-events: none; /* 👈 evita bloquear el toque */
       }
 
-      /* portada translúcida */
+      /* mosaico portada */
       .frente {
-        position: relative;
-        background: #000 url("imagenes/portada.jpg") center/70% no-repeat;
-        border: 1px solid #312d2d;
+        background-image: url("imagenes/portada.jpg");
+        background-size: 300% 400%; /* 3 columnas, 4 filas */
+        border: 1px solid #fff;
+        opacity: 0.7;
       }
+
       .frente::after {
         content: "";
         position: absolute;
@@ -81,15 +78,16 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.2); /* oscurece un poco */
-        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 1px;
+        pointer-events: none; /* 👈 capa oscura no bloquea */
       }
 
       .atras {
         transform: rotateY(180deg);
         background-size: cover;
         background-position: center;
-        border: 2px solid #333;
+        border: 4px solid #bcbbbb;
       }
 
       .vibrar {
@@ -157,6 +155,23 @@
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
       }
+
+      .ganaste {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 5rem;
+        color: #fff;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 1s ease;
+        z-index: 2000;
+        text-shadow: 0 0 20px #fff;
+      }
+      .ganaste.mostrar {
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
@@ -165,9 +180,9 @@
     </header>
     <div class="juego" id="juego"></div>
     <div id="imagenCentro" class="imagen-centro"></div>
+    <div id="mensajeGanaste" class="ganaste">¡GANASTE!</div>
 
     <script>
-      //imagenes marca
       const imagenes = [
         "imagenes/foto1.jpg",
         "imagenes/foto2.jpg",
@@ -177,7 +192,6 @@
         "imagenes/foto6.jpg",
       ];
 
-      // Colores de la paleta
       const coloresPaleta = [
         "#EAD9C5",
         "#C8A060",
@@ -190,27 +204,36 @@
       let cartas;
       let contenedorJuego = document.getElementById("juego");
       const imagenCentro = document.getElementById("imagenCentro");
+      const mensajeGanaste = document.getElementById("mensajeGanaste");
 
       let cartasVolteadas = [];
       let aciertos = 0;
 
       function iniciarJuego() {
         contenedorJuego.innerHTML = "";
-        cartas = [...imagenes, ...imagenes]; // 12 cartas (6 pares)
+        mensajeGanaste.classList.remove("mostrar");
+        cartas = [...imagenes, ...imagenes];
         cartas.sort(() => Math.random() - 0.5);
         aciertos = 0;
         cartasVolteadas = [];
-        cartas.forEach((imagen) =>
-          contenedorJuego.appendChild(crearCarta(imagen))
-        );
+        cartas.forEach((imagen, i) => {
+          contenedorJuego.appendChild(crearCarta(imagen, i));
+        });
       }
 
-      function crearCarta(imagen) {
+      function crearCarta(imagen, i) {
         const carta = document.createElement("div");
         carta.classList.add("carta");
+
+        // coordenadas mosaico (3x4 grid → 12 cartas)
+        const fila = Math.floor(i / 3);
+        const col = i % 3;
+        const posX = (col / 2) * 100;
+        const posY = (fila / 3) * 100;
+
         carta.innerHTML = `
           <div class="carta-interna">
-            <div class="frente"></div>
+            <div class="frente" style="background-position:${posX}% ${posY}%;"></div>
             <div class="atras" style="background-image: url('${imagen}')"></div>
           </div>
         `;
@@ -246,7 +269,8 @@
                 voltearUltimasCartas();
                 setTimeout(() => {
                   animacionFinal();
-                  setTimeout(iniciarJuego, 5000);
+                  mostrarGanaste();
+                  setTimeout(iniciarJuego, 6000);
                 }, 1000);
               }, 500);
             }
@@ -308,6 +332,10 @@
           }, 2000);
         });
         explotarEstrellas();
+      }
+
+      function mostrarGanaste() {
+        mensajeGanaste.classList.add("mostrar");
       }
 
       iniciarJuego();
