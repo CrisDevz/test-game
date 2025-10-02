@@ -12,7 +12,7 @@
         justify-content: center; /* centrado vertical */
         height: 100vh;
         margin: 0;
-        background: #111;
+        background: #000000;
         overflow: hidden;
       }
       header {
@@ -26,10 +26,10 @@
         height: auto;
       }
 
-      /* tablero centrado vertical para 55\" */
+      /* centrado vertical para 55\" */
       .juego {
         display: grid;
-        grid-template-columns: repeat(3, 180px); /* 3 columnas grandes */
+        grid-template-columns: repeat(3, 180px);
         gap: 30px;
         justify-content: center;
         align-items: center;
@@ -72,7 +72,7 @@
       .frente {
         position: relative;
         background: #000 url("imagenes/portada.jpg") center/70% no-repeat;
-        border: 1px solid #fff;
+        border: 1px solid #312d2d;
       }
       .frente::after {
         content: "";
