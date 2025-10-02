@@ -32,7 +32,12 @@
         width: 80vw;
         max-width: 600px;
       }
-
+/* Quita el highlight azul en dispositivos táctiles */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-focus-ring-color: transparent;
+  outline: none;
+}
       .carta {
         aspect-ratio: 3/4;
         perspective: 1000px;
